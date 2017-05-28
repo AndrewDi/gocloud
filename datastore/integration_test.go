@@ -16,34 +16,110 @@ package datastore
 
 import (
 	"errors"
+	"flag"
 	"fmt"
+	"log"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+	"veneer/grpcreplay"
 
 	"cloud.google.com/go/internal/testutil"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 )
 
 // TODO(djd): Make test entity clean up more robust: some test entities may
 // be left behind if tests are aborted, the transport fails, etc.
 
+var timeNow = time.Now()
+
 // suffix is a timestamp-based suffix which is appended to key names,
 // particularly for the root keys of entity groups. This reduces flakiness
 // when the tests are run in parallel.
-var suffix = fmt.Sprintf("-t%d", time.Now().UnixNano())
+var suffix string
+
+var (
+	recordFilename = flag.String("record", "", "filename to record RPCs")
+	replayFilename = flag.String("replay", "", "filename to replay RPCs")
+	dump           = flag.Bool("dump", false, "dump record/replay file")
+	logFlag        = flag.Bool("log", false, "log on replay")
+	dialOptions    []grpc.DialOption
+)
+
+func TestMain(m *testing.M) {
+	os.Exit(testMain(m))
+}
+
+func testMain(m *testing.M) int {
+	flag.Parse()
+	switch {
+	case *recordFilename != "" && *replayFilename != "":
+		log.Fatal("cannot provide both -record and -replay")
+	case *recordFilename != "":
+		b, err := timeNow.MarshalBinary()
+		if err != nil {
+			log.Fatal(err)
+		}
+		rec, err := grpcreplay.NewRecorderFile(*recordFilename, b)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dialOptions = rec.DialOptions()
+		defer func() {
+			if err := rec.Close(); err != nil {
+				log.Fatalf("closing recorder: %v", err)
+			}
+			if *dump {
+				grpcreplay.FprintFile(os.Stdout, *recordFilename)
+			}
+		}()
+		log.Printf("recording to %s", *recordFilename)
+
+	case *replayFilename != "":
+		rep, err := grpcreplay.NewReplayerFile(*replayFilename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dialOptions = rep.DialOptions()
+		if *logFlag {
+			rep.SetLogFunc(log.Printf)
+		}
+		if err := timeNow.UnmarshalBinary(rep.Initial()); err != nil {
+			log.Fatal(err)
+		}
+		defer rep.Close()
+		log.Printf("replaying from %s", *replayFilename)
+		if *dump {
+			grpcreplay.FprintFile(os.Stdout, *replayFilename)
+		}
+	}
+	suffix = fmt.Sprintf("-t%d", timeNow.UnixNano())
+	return m.Run()
+}
 
 func newClient(ctx context.Context, t *testing.T) *Client {
 	ts := testutil.TokenSource(ctx, ScopeDatastore)
 	if ts == nil {
 		t.Skip("Integration tests skipped. See CONTRIBUTING.md for details")
 	}
-	client, err := NewClient(ctx, testutil.ProjID(), option.WithTokenSource(ts))
+	opts := []option.ClientOption{
+		option.WithTokenSource(ts),
+		// Block until a connection is established. Otherwise, on replay, the
+		// client.Close happens so quickly that the connection hasn't had time to
+		// establish, and grpc gets confused and logs errors.
+		option.WithGRPCDialOption(grpc.WithBlock()),
+	}
+	for _, opt := range dialOptions {
+		opts = append(opts, option.WithGRPCDialOption(opt))
+	}
+	client, err := NewClient(ctx, testutil.ProjID(), opts...)
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
@@ -64,7 +140,7 @@ func TestBasics(t *testing.T) {
 		T time.Time
 	}
 
-	x0 := X{66, "99", time.Now().Truncate(time.Millisecond)}
+	x0 := X{66, "99", timeNow.Truncate(time.Millisecond)}
 	k, err := client.Put(ctx, IncompleteKey("BasicsX", nil), &x0)
 	if err != nil {
 		t.Fatalf("client.Put: %v", err)
@@ -348,7 +424,7 @@ func TestFilters(t *testing.T) {
 	defer client.Close()
 
 	parent := NameKey("SQParent", "TestFilters"+suffix, nil)
-	now := time.Now().Truncate(time.Millisecond).Unix()
+	now := timeNow.Truncate(time.Millisecond).Unix()
 	children := []*SQChild{
 		{I: 0, T: now, U: now},
 		{I: 1, T: now, U: now},
@@ -435,7 +511,7 @@ func TestLargeQuery(t *testing.T) {
 	defer client.Close()
 
 	parent := NameKey("LQParent", "TestFilters"+suffix, nil)
-	now := time.Now().Truncate(time.Millisecond).Unix()
+	now := timeNow.Truncate(time.Millisecond).Unix()
 
 	// Make a large number of children entities.
 	const n = 800
@@ -603,7 +679,7 @@ func TestEventualConsistency(t *testing.T) {
 	defer client.Close()
 
 	parent := NameKey("SQParent", "TestEventualConsistency"+suffix, nil)
-	now := time.Now().Truncate(time.Millisecond).Unix()
+	now := timeNow.Truncate(time.Millisecond).Unix()
 	children := []*SQChild{
 		{I: 0, T: now, U: now},
 		{I: 1, T: now, U: now},
@@ -630,7 +706,7 @@ func TestProjection(t *testing.T) {
 	defer client.Close()
 
 	parent := NameKey("SQParent", "TestProjection"+suffix, nil)
-	now := time.Now().Truncate(time.Millisecond).Unix()
+	now := timeNow.Truncate(time.Millisecond).Unix()
 	children := []*SQChild{
 		{I: 1 << 0, J: 100, T: now, U: now},
 		{I: 1 << 1, J: 100, T: now, U: now},
@@ -913,7 +989,7 @@ func TestTransaction(t *testing.T) {
 
 	for i, tt := range tests {
 		// Put a new counter.
-		c := &Counter{N: 10, T: time.Now()}
+		c := &Counter{N: 10, T: timeNow}
 		key, err := client.Put(ctx, IncompleteKey("TransCounter", nil), c)
 		if err != nil {
 			t.Errorf("%s: client.Put: %v", tt.desc, err)
