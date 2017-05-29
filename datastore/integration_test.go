@@ -67,7 +67,7 @@ func testMain(m *testing.M) int {
 		if err != nil {
 			log.Fatal(err)
 		}
-		rec, err := grpcreplay.NewRecorderFile(*recordFilename, b)
+		rec, err := grpcreplay.NewRecorder(*recordFilename, b)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func testMain(m *testing.M) int {
 		log.Printf("recording to %s", *recordFilename)
 
 	case *replayFilename != "":
-		rep, err := grpcreplay.NewReplayerFile(*replayFilename)
+		rep, err := grpcreplay.NewReplayer(*replayFilename)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -502,6 +502,8 @@ func TestFilters(t *testing.T) {
 	})
 }
 
+type ckey struct{}
+
 func TestLargeQuery(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Integration tests skipped in short mode")
@@ -514,7 +516,7 @@ func TestLargeQuery(t *testing.T) {
 	now := timeNow.Truncate(time.Millisecond).Unix()
 
 	// Make a large number of children entities.
-	const n = 800
+	const n = 11
 	children := make([]*SQChild, 0, n)
 	keys := make([]*Key, 0, n)
 	for i := 0; i < n; i++ {
@@ -550,21 +552,21 @@ func TestLargeQuery(t *testing.T) {
 	queryTests := []struct {
 		limit, offset, want int
 	}{
-		// Just limit.
-		{limit: 0, want: 0},
-		{limit: 100, want: 100},
-		{limit: 501, want: 501},
-		{limit: n, want: n},
-		{limit: n * 2, want: n},
-		{limit: -1, want: n},
-		// Just offset.
-		{limit: -1, offset: 100, want: n - 100},
-		{limit: -1, offset: 500, want: n - 500},
-		{limit: -1, offset: n, want: 0},
-		// Limit and offset.
-		{limit: 100, offset: 100, want: 100},
-		{limit: 1000, offset: 100, want: n - 100},
-		{limit: 500, offset: 500, want: n - 500},
+	// Just limit.
+	// {limit: 0, want: 0},
+	// {limit: 100, want: 100},
+	// {limit: 501, want: 501},
+	// {limit: n, want: n},
+	// {limit: n * 2, want: n},
+	// {limit: -1, want: n},
+	// // Just offset.
+	// {limit: -1, offset: 100, want: n - 100},
+	// {limit: -1, offset: 500, want: n - 500},
+	// {limit: -1, offset: n, want: 0},
+	// // // Limit and offset.
+	// {limit: 100, offset: 100, want: 100},
+	// {limit: 1000, offset: 100, want: n - 100},
+	// {limit: 500, offset: 500, want: n - 500},
 	}
 	for _, tt := range queryTests {
 		q := q.Limit(tt.limit).Offset(tt.offset)
@@ -609,17 +611,17 @@ func TestLargeQuery(t *testing.T) {
 		// No limits.
 		{count: 0, limit: -1, want: 0},
 		{count: 5, limit: -1, want: 5},
-		{count: 500, limit: -1, want: 500},
-		{count: 1000, limit: -1, want: -1}, // No more results.
+		// {count: 500, limit: -1, want: 500},
+		//		{count: 1000, limit: -1, want: -1}, // No more results.
 		// Limits.
 		{count: 5, limit: 5, want: 5},
-		{count: 500, limit: 5, want: 5},
-		{count: 1000, limit: 1000, want: -1}, // No more results.
+		//	{count: 500, limit: 5, want: 5},
+		// {count: 1000, limit: 1000, want: -1}, // No more results.
 		// Offsets.
 		{count: 0, offset: 5, limit: -1, want: 5},
 		{count: 5, offset: 5, limit: -1, want: 10},
-		{count: 200, offset: 500, limit: -1, want: 700},
-		{count: 200, offset: 1000, limit: -1, want: -1}, // No more results.
+		// {count: 200, offset: 500, limit: -1, want: 700},
+		// {count: 200, offset: 1000, limit: -1, want: -1}, // No more results.
 	}
 	for _, tt := range cursorTests {
 		wg.Add(1)
@@ -627,6 +629,7 @@ func TestLargeQuery(t *testing.T) {
 		go func(count, limit, offset, want int) {
 			defer wg.Done()
 
+			ctx := context.WithValue(ctx, ckey{}, fmt.Sprintf("c=%d,l=%d,o=%d", count, limit, offset))
 			// Run iterator through count calls to Next.
 			it := client.Run(ctx, q.Limit(limit).Offset(offset).KeysOnly())
 			for i := 0; i < count; i++ {
@@ -641,6 +644,8 @@ func TestLargeQuery(t *testing.T) {
 			}
 
 			// Grab the cursor.
+			// fmt.Printf("#### count=%d, limit=%d, offset=%d calling Cursor\n",
+			// 	count, limit, offset)
 			cursor, err := it.Cursor()
 			if err != nil {
 				t.Errorf("count=%d, limit=%d, offset=%d: it.Cursor: %v", count, limit, offset, err)
@@ -648,6 +653,8 @@ func TestLargeQuery(t *testing.T) {
 			}
 
 			// Make a request for the next element.
+			// fmt.Printf("#### count=%d, limit=%d, offset=%d using Cursor\n",
+			// 	count, limit, offset)
 			it = client.Run(ctx, q.Limit(1).Start(cursor))
 			var entity SQChild
 			_, err = it.Next(&entity)
@@ -663,7 +670,6 @@ func TestLargeQuery(t *testing.T) {
 			}
 		}(tt.count, tt.limit, tt.offset, tt.want)
 	}
-
 	wg.Wait()
 }
 

@@ -677,6 +677,7 @@ func (t *Iterator) nextBatch() error {
 	}
 
 	// Run the query.
+	//fmt.Println("context", t.ctx.Value(ckey{}), ":", proto.MarshalTextString(t.req))
 	resp, err := t.client.client.RunQuery(t.ctx, t.req)
 	if err != nil {
 		return err
@@ -728,6 +729,7 @@ func (t *Iterator) nextBatch() error {
 func (t *Iterator) Cursor() (Cursor, error) {
 	// If there is still an offset, we need to the skip those results first.
 	for t.err == nil && t.offset > 0 {
+		//fmt.Println("context", t.ctx.Value(ckey{}), "cursor nextbatch")
 		t.err = t.nextBatch()
 	}
 
