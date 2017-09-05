@@ -42,3 +42,6 @@ go test -race -v -short ./... 2>&1 | tee $KOKORO_ARTIFACTS_DIR/$KOKORO_GERRIT_CH
 
 # Make sure README.md is up to date.
 make -C internal/readme test diff
+
+# Integration test for profiler
+source $GOCLOUD_HOME/profiler/integration-test.sh .
