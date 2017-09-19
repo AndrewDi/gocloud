@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"text/template"
@@ -88,6 +89,9 @@ mkdir -p $GOCLOUD_HOME
 git clone https://code.googlesource.com/gocloud $GOCLOUD_HOME
 
 cd $GOCLOUD_HOME
+
+# TODO: remove
+git checkout profiler-test
 git reset --hard {{.Commit}}
 go get -v ./...
 
@@ -100,7 +104,7 @@ echo {{.FinishString}}
 
 const dockerfileFmt = `FROM golang
 RUN git clone https://code.googlesource.com/gocloud /go/src/cloud.google.com/go
-RUN cd /go/src/cloud.google.com/go && git reset --hard %v
+RUN cd /go/src/cloud.google.com/go && git checkout profiler-test && git reset --hard %v
 RUN go get -v cloud.google.com/go/...
 CMD go test -v cloud.google.com/go/profiler -timeout=15m -tags=busybench -service="%v" -finish_string="%v" -run TestBusy
  `
@@ -415,36 +419,33 @@ type imageResponse struct {
 }
 
 // deleteGKEImage deletes an image from Google Container Registry.
-func (tr *testRunner) deleteGKEImage(ctx context.Context, imageName string) {
+func (tr *testRunner) deleteGKEImage(ctx context.Context, imageName string) error {
 	queryImageURL := fmt.Sprintf("https://gcr.io/v2/%v/tags/list", imageName)
 	resp, err := tr.client.Get(queryImageURL)
 	if err != nil {
-		t.Errorf("Get(%v) got error: %v", queryImageURL, err)
-		return
+		return fmt.Errorf("Get(%v) got error: %v", queryImageURL, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Errorf("ioutil.ReadAll(resp.Body) got error: %v", err)
-		return
+		return fmt.Errorf("ioutil.ReadAll(resp.Body) got error: %v", err)
 	}
 	var ir imageResponse
 	if err := json.Unmarshal(body, &ir); err != nil {
-		t.Errorf("json.Unmarshal() got error: %v", err)
-		return
+		return fmt.Errorf("json.Unmarshal() got error: %v", err)
 	}
 
 	const deleteImageURLFmt = "https://gcr.io/v2/%v/manifests/%v"
 	for _, tag := range ir.Tags {
 		if err := deleteGKEImageResource(tr.client, fmt.Sprintf(deleteImageURLFmt, imageName, tag)); err != nil {
-			t.Errorf("deleteGKEImageResource(%v:tag:%v) got error: %v", imageName, tag, err)
+			return fmt.Errorf("deleteGKEImageResource(%v:tag:%v) got error: %v", imageName, tag, err)
 		}
 	}
 
 	for manifest := range ir.Manifest {
 		if err := deleteGKEImageResource(tr.client, fmt.Sprintf(deleteImageURLFmt, imageName, manifest)); err != nil {
-			t.Errorf("deleteGKEImageResource(%v:manifest:%v) got error: %v", imageName, manifest, err)
+			return fmt.Errorf("deleteGKEImageResource(%v:manifest:%v) got error: %v", imageName, manifest, err)
 		}
 	}
 }
