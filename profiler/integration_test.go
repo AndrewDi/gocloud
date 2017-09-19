@@ -448,6 +448,7 @@ func (tr *testRunner) deleteGKEImage(ctx context.Context, imageName string) erro
 			return fmt.Errorf("deleteGKEImageResource(%v:manifest:%v) got error: %v", imageName, manifest, err)
 		}
 	}
+	return nil
 }
 
 func deleteGKEImageResource(client *http.Client, url string) error {
