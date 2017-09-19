@@ -89,6 +89,8 @@ mkdir -p $GOCLOUD_HOME
 git clone https://code.googlesource.com/gocloud $GOCLOUD_HOME
 
 cd $GOCLOUD_HOME
+# TODO: remove
+git checkout profiler-test
 git reset --hard {{.Commit}}
 go get -v ./...
 
@@ -101,7 +103,7 @@ echo {{.FinishString}}
 
 const dockerfileFmt = `FROM golang
 RUN git clone https://code.googlesource.com/gocloud /go/src/cloud.google.com/go
-RUN cd /go/src/cloud.google.com/go && git reset --hard %v
+RUN cd /go/src/cloud.google.com/go && git checkout profiler-test && git reset --hard %v
 RUN go get -v cloud.google.com/go/...
 CMD go test -v cloud.google.com/go/profiler -timeout=15m -tags=busybench -service="%v" -finish_string="%v" -run TestBusy
  `
