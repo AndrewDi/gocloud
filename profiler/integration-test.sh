@@ -6,6 +6,7 @@ set -eo pipefail
 # Display commands being run.
 set -x
 
+echo "$PWD"
 # cd to project dir on Kokoro instance
 cd git/gocloud
 
