@@ -52,6 +52,7 @@ const (
 	testSvcVersion      = "test-service-version"
 	testProfileDuration = time.Second * 10
 	testServerTimeout   = time.Second * 15
+	wantFunctionName    = "profilee"
 )
 
 func createTestDeployment() *pb.Deployment {
@@ -568,9 +569,10 @@ func TestInitializeConfig(t *testing.T) {
 
 type fakeProfilerServer struct {
 	pb.ProfilerServiceServer
-	count       int
-	gotProfiles map[string][]byte
-	done        chan bool
+	count          int
+	gotCPUProfile  []byte
+	gotHeapProfile []byte
+	done           chan bool
 }
 
 func (fs *fakeProfilerServer) CreateProfile(ctx context.Context, in *pb.CreateProfileRequest) (*pb.Profile, error) {
@@ -588,9 +590,9 @@ func (fs *fakeProfilerServer) CreateProfile(ctx context.Context, in *pb.CreatePr
 func (fs *fakeProfilerServer) UpdateProfile(ctx context.Context, in *pb.UpdateProfileRequest) (*pb.Profile, error) {
 	switch in.Profile.ProfileType {
 	case pb.ProfileType_CPU:
-		fs.gotProfiles["CPU"] = in.Profile.ProfileBytes
+		fs.gotCPUProfile = in.Profile.ProfileBytes
 	case pb.ProfileType_HEAP:
-		fs.gotProfiles["HEAP"] = in.Profile.ProfileBytes
+		fs.gotHeapProfile = in.Profile.ProfileBytes
 		fs.done <- true
 	}
 
@@ -627,7 +629,16 @@ func profileeWork() {
 	}
 }
 
-func validateProfile(rawData []byte, wantFunctionName string) error {
+func checkSymbolization(p *profile.Profile) error {
+	for _, l := range p.Location {
+		if len(l.Line) > 0 && l.Line[0].Function != nil && strings.Contains(l.Line[0].Function.Name, wantFunctionName) {
+			return nil
+		}
+	}
+	return fmt.Errorf("want function name %v not found in profile", wantFunctionName)
+}
+
+func validateProfile(rawData []byte) error {
 	p, err := profile.ParseData(rawData)
 	if err != nil {
 		return fmt.Errorf("ParseData failed: %v", err)
@@ -645,12 +656,10 @@ func validateProfile(rawData []byte, wantFunctionName string) error {
 		return fmt.Errorf("profile contains zero functions: %v", p)
 	}
 
-	for _, l := range p.Location {
-		if len(l.Line) > 0 && l.Line[0].Function != nil && strings.Contains(l.Line[0].Function.Name, wantFunctionName) {
-			return nil
-		}
+	if err := checkSymbolization(p); err != nil {
+		return fmt.Errorf("checkSymbolization failed: %v for %v", err, p)
 	}
-	return fmt.Errorf("wanted function name %v not found in the profile", wantFunctionName)
+	return nil
 }
 
 func TestAgentWithServer(t *testing.T) {
@@ -663,7 +672,7 @@ func TestAgentWithServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("testutil.NewServer(): %v", err)
 	}
-	fakeServer := &fakeProfilerServer{gotProfiles: map[string][]byte{}, done: make(chan bool)}
+	fakeServer := &fakeProfilerServer{done: make(chan bool)}
 	pb.RegisterProfilerServiceServer(srv.Gsrv, fakeServer)
 
 	srv.Start()
@@ -689,11 +698,10 @@ func TestAgentWithServer(t *testing.T) {
 	}
 	quitProfilee <- true
 
-	for _, pType := range []string{"CPU", "HEAP"} {
-		if profile, ok := fakeServer.gotProfiles[pType]; !ok {
-			t.Errorf("fakeServer.gotProfiles[%s] got no profile, want profile", pType)
-		} else if err := validateProfile(profile, "profilee"); err != nil {
-			t.Errorf("validateProfile(%s) got error: %v", pType, err)
-		}
+	if err := validateProfile(fakeServer.gotCPUProfile); err != nil {
+		t.Errorf("validateProfile(gotCPUProfile): %v", err)
+	}
+	if err := validateProfile(fakeServer.gotHeapProfile); err != nil {
+		t.Errorf("validateProfile(gotHeapProfile): %v", err)
 	}
 }
