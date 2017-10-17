@@ -24,10 +24,7 @@ import (
 	"time"
 )
 
-var (
-	service        = flag.String("service", "", "service name")
-	mutexProfiling = flag.Bool("mutex_profiling", false, "enable mutex profiling")
-)
+var service = flag.String("service", "", "service name")
 
 const duration = time.Minute * 10
 
@@ -71,12 +68,7 @@ func main() {
 
 	if *service == "" {
 		log.Print("Service name must be configured using --service flag.")
-	} else if err := profiler.Start(
-		profiler.Config{
-			Service:        *service,
-			MutexProfiling: *mutexProfiling,
-			DebugLogging:   true,
-		}); err != nil {
+	} else if err := profiler.Start(profiler.Config{Service: *service, DebugLogging: true}); err != nil {
 		log.Printf("Failed to start the profiler: %v", err)
 	} else {
 		busywork()
