@@ -29,10 +29,7 @@ mkdir -p $GOCLOUD_HOME
 
 # Move code into $GOPATH and get dependencies
 cp -R ./* $GOCLOUD_HOME
-cd $GOCLOUD_HOME
-go get -v ./...
-
-cd internal/kokoro
+cd $GOCLOUD_HOME/internal/kokoro
 # Don't print out encryption keys, etc
 set +x
 key=$(cat "$KOKORO_ARTIFACTS_DIR/keystore/72523_encrypted_ba2d6f7723ed_key")
@@ -49,4 +46,4 @@ export GCLOUD_TESTS_GOLANG_BUCKET="dulcet-port-762-go-cloud-profiler-test"
 
 cd $GOCLOUD_HOME/profiler
 go get -t -tags=integration .
-go test -timeout=60m -parallel=5 -tags=integration -run TestAgentIntegration -commit="$COMMIT"
+go test -timeout=60m -parallel=4 -tags=integration -run TestAgentIntegration -commit="$COMMIT"
