@@ -21,10 +21,14 @@ import (
 	"flag"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 )
 
-var service = flag.String("service", "", "service name")
+var (
+	service        = flag.String("service", "", "service name")
+	mutexProfiling = flag.Bool("mutex_profiling", false, "enable mutex profiling")
+)
 
 const duration = time.Minute * 10
 
@@ -63,14 +67,40 @@ func busyworkOnce() {
 	// Throw away the result.
 }
 
+func mutexHog(mu1, mu2 *sync.Mutex) {
+	ticker := time.NewTicker(duration)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			return
+		default:
+			mu1.Lock()
+			mu2.Lock()
+			mu1.Unlock()
+			mu2.Unlock()
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 
 	if *service == "" {
 		log.Print("Service name must be configured using --service flag.")
-	} else if err := profiler.Start(profiler.Config{Service: *service, DebugLogging: true}); err != nil {
+	} else if err := profiler.Start(
+		profiler.Config{
+			Service:        *service,
+			MutexProfiling: *mutexProfiling,
+			DebugLogging:   true,
+		}); err != nil {
 		log.Printf("Failed to start the profiler: %v", err)
 	} else {
+		mu1 := new(sync.Mutex)
+		mu2 := new(sync.Mutex)
+		for i := 0; i < 10; i++ {
+			go mutexHog(mu1, mu2)
+		}
 		busywork()
 	}
 
