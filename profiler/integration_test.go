@@ -87,16 +87,17 @@ mkdir -p $GOCLOUD_HOME
 git clone https://code.googlesource.com/gocloud $GOCLOUD_HOME
 
 cd $GOCLOUD_HOME
+git checkout profiler-test
 git reset --hard {{.Commit}}
 go get -v ./...
 
 # Run benchmark with agent
-go run profiler/busybench/busybench.go --service="{{.Service}}"
+go run profiler/busybench/busybench.go --service="{{.Service}}" --mutex_profiling="{{.MutexProfiling}}"
 `
 
 const dockerfileFmt = `FROM golang
 RUN git clone https://code.googlesource.com/gocloud /go/src/cloud.google.com/go \
-    && cd /go/src/cloud.google.com/go && git reset --hard %s \
+    && cd /go/src/cloud.google.com/go && git checkout profiler-test && git reset --hard %s \
     && go get -v cloud.google.com/go/... && go install -v cloud.google.com/go/profiler/busybench
 CMD ["busybench", "--service", "%s"]
  `
@@ -156,32 +157,30 @@ func validateProfileData(rawData []byte, wantFunctionName string) error {
 }
 
 type instanceConfig struct {
-	name      string
-	service   string
-	goVersion string
+	name           string
+	service        string
+	goVersion      string
+	mutexProfiling bool
 }
 
 func newInstanceConfigs() []instanceConfig {
 	return []instanceConfig{
 		{
-			name:      fmt.Sprintf("profiler-test-go19-%d", runID),
-			service:   fmt.Sprintf("profiler-test-go19-%d-gce", runID),
-			goVersion: "1.9",
+			name:           fmt.Sprintf("profiler-test-go19-%d", runID),
+			service:        fmt.Sprintf("profiler-test-go19-%d-gce", runID),
+			goVersion:      "1.9",
+			mutexProfiling: true,
 		},
 		{
-			name:      fmt.Sprintf("profiler-test-go18-%d", runID),
-			service:   fmt.Sprintf("profiler-test-go18-%d-gce", runID),
-			goVersion: "1.8",
+			name:           fmt.Sprintf("profiler-test-go18-%d", runID),
+			service:        fmt.Sprintf("profiler-test-go18-%d-gce", runID),
+			goVersion:      "1.8",
+			mutexProfiling: true,
 		},
 		{
 			name:      fmt.Sprintf("profiler-test-go17-%d", runID),
 			service:   fmt.Sprintf("profiler-test-go17-%d-gce", runID),
 			goVersion: "1.7",
-		},
-		{
-			name:      fmt.Sprintf("profiler-test-go16-%d", runID),
-			service:   fmt.Sprintf("profiler-test-go16-%d-gce", runID),
-			goVersion: "1.6",
 		},
 	}
 }
@@ -208,13 +207,15 @@ func renderStartupScript(template *template.Template, inst instanceConfig) (stri
 	var buf bytes.Buffer
 	err := template.Execute(&buf,
 		struct {
-			Service   string
-			GoVersion string
-			Commit    string
+			Service        string
+			GoVersion      string
+			Commit         string
+			MutexProfiling bool
 		}{
-			Service:   inst.service,
-			GoVersion: inst.goVersion,
-			Commit:    *commit,
+			Service:        inst.service,
+			GoVersion:      inst.goVersion,
+			Commit:         *commit,
+			MutexProfiling: inst.mutexProfiling,
 		})
 	if err != nil {
 		return "", fmt.Errorf("failed to render startup script for %s: %v", inst.name, err)
@@ -339,7 +340,12 @@ func (tr *testRunner) runTestOnGCE(ctx context.Context, t *testing.T, inst insta
 	timeNow := time.Now()
 	endTime := timeNow.Format(time.RFC3339)
 	startTime := timeNow.Add(-1 * time.Hour).Format(time.RFC3339)
-	for _, pType := range []string{"CPU", "HEAP"} {
+
+	profileTypes := []string{"CPU", "HEAP", "THREADS"}
+	if inst.mutexProfiling {
+		profileTypes = append(profileTypes, "CONTENTION")
+	}
+	for _, pType := range profileTypes {
 		if err := tr.queryAndCheckProfile(inst.service, startTime, endTime, pType, projectID); err != nil {
 			t.Errorf("queryAndCheckProfile(%s, %s, %s, %s) got error: %v", inst.service, startTime, endTime, pType, err)
 		}
@@ -586,7 +592,7 @@ func (tr *testRunner) runTestOnGKE(ctx context.Context, t *testing.T, cfg cluste
 	timeNow := time.Now()
 	endTime := timeNow.Format(time.RFC3339)
 	startTime := timeNow.Add(-1 * time.Hour).Format(time.RFC3339)
-	for _, pType := range []string{"CPU", "HEAP"} {
+	for _, pType := range []string{"CPU", "HEAP", "THREADS"} {
 		if err := tr.queryAndCheckProfile(cfg.service, startTime, endTime, pType, projectID); err != nil {
 			t.Errorf("queryAndCheckProfile(%s, %s, %s, %s) got error: %v", cfg.service, startTime, endTime, pType, err)
 		}

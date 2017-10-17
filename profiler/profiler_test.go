@@ -23,6 +23,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -672,55 +673,11 @@ func validateProfile(rawData []byte, wantFunctionName string) error {
 	return fmt.Errorf("wanted function name %s not found in the profile", wantFunctionName)
 }
 
-func TestAgentWithServer(t *testing.T) {
-	oldDialGRPC, oldConfig := dialGRPC, config
-	defer func() {
-		dialGRPC, config = oldDialGRPC, oldConfig
-	}()
-
-	srv, err := testutil.NewServer()
-	if err != nil {
-		t.Fatalf("testutil.NewServer(): %v", err)
-	}
-	fakeServer := &fakeProfilerServer{gotProfiles: map[string][]byte{}, done: make(chan bool)}
-	pb.RegisterProfilerServiceServer(srv.Gsrv, fakeServer)
-
-	srv.Start()
-
-	dialGRPC = gtransport.DialInsecure
-	if err := Start(Config{
-		Target:    testTarget,
-		ProjectID: testProjectID,
-		APIAddr:   srv.Addr,
-		instance:  testInstance,
-		zone:      testZone,
-	}); err != nil {
-		t.Fatalf("Start(): %v", err)
-	}
-
-	quitProfilee := make(chan bool)
-	go profileeLoop(quitProfilee)
-
-	select {
-	case <-fakeServer.done:
-	case <-time.After(testServerTimeout):
-		t.Errorf("got timeout after %v, want fake server done", testServerTimeout)
-	}
-	quitProfilee <- true
-
-	for _, pType := range []string{"CPU", "HEAP"} {
-		if profile, ok := fakeServer.gotProfiles[pType]; !ok {
-			t.Errorf("fakeServer.gotProfiles[%s] got no profile, want profile", pType)
-		} else if err := validateProfile(profile, "profilee"); err != nil {
-			t.Errorf("validateProfile(%s) got error: %v", pType, err)
-		}
-	}
-}
-
 func TestDeltaMutexProfile(t *testing.T) {
-	oldMutexEnabled := mutexEnabled
+	oldMutexEnabled, oldMaxProcs := mutexEnabled, runtime.GOMAXPROCS(10)
 	defer func() {
 		mutexEnabled = oldMutexEnabled
+		runtime.GOMAXPROCS(oldMaxProcs)
 	}()
 	if mutexEnabled = enableMutexProfiling(); !mutexEnabled {
 		t.Skip("Go too old - mutex profiling not supported.")
@@ -775,6 +732,7 @@ func sum(p *profile.Profile, fname string) int64 {
 func mutexHog(mu1, mu2 *sync.Mutex, start time.Time, dt time.Duration) {
 	for time.Since(start) < dt {
 		mu1.Lock()
+		runtime.Gosched()
 		mu2.Lock()
 		mu1.Unlock()
 		mu2.Unlock()
@@ -786,6 +744,7 @@ func mutexHog(mu1, mu2 *sync.Mutex, start time.Time, dt time.Duration) {
 func backgroundHog(mu1, mu2 *sync.Mutex, start time.Time, dt time.Duration) {
 	for time.Since(start) < dt {
 		mu1.Lock()
+		runtime.Gosched()
 		mu2.Lock()
 		mu1.Unlock()
 		mu2.Unlock()
@@ -805,4 +764,49 @@ func hog(dt time.Duration, hogger func(mu1, mu2 *sync.Mutex, start time.Time, dt
 		}()
 	}
 	wg.Wait()
+}
+
+func TestAgentWithServer(t *testing.T) {
+	oldDialGRPC, oldConfig := dialGRPC, config
+	defer func() {
+		dialGRPC, config = oldDialGRPC, oldConfig
+	}()
+
+	srv, err := testutil.NewServer()
+	if err != nil {
+		t.Fatalf("testutil.NewServer(): %v", err)
+	}
+	fakeServer := &fakeProfilerServer{gotProfiles: map[string][]byte{}, done: make(chan bool)}
+	pb.RegisterProfilerServiceServer(srv.Gsrv, fakeServer)
+
+	srv.Start()
+
+	dialGRPC = gtransport.DialInsecure
+	if err := Start(Config{
+		Target:    testTarget,
+		ProjectID: testProjectID,
+		APIAddr:   srv.Addr,
+		instance:  testInstance,
+		zone:      testZone,
+	}); err != nil {
+		t.Fatalf("Start(): %v", err)
+	}
+
+	quitProfilee := make(chan bool)
+	go profileeLoop(quitProfilee)
+
+	select {
+	case <-fakeServer.done:
+	case <-time.After(testServerTimeout):
+		t.Errorf("got timeout after %v, want fake server done", testServerTimeout)
+	}
+	quitProfilee <- true
+
+	for _, pType := range []string{"CPU", "HEAP"} {
+		if profile, ok := fakeServer.gotProfiles[pType]; !ok {
+			t.Errorf("fakeServer.gotProfiles[%s] got no profile, want profile", pType)
+		} else if err := validateProfile(profile, "profilee"); err != nil {
+			t.Errorf("validateProfile(%s) got error: %v", pType, err)
+		}
+	}
 }
