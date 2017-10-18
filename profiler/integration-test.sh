@@ -22,6 +22,8 @@ fi
 
 COMMIT=$(git rev-parse HEAD)
 
+go version
+
 # Set $GOPATH
 export GOPATH="$HOME/go"
 GOCLOUD_HOME=$GOPATH/src/cloud.google.com/go
