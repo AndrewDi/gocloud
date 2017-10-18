@@ -21,20 +21,16 @@ import (
 	"flag"
 	"log"
 	"math/rand"
-	"sync"
 	"time"
 )
 
-var (
-	service        = flag.String("service", "", "service name")
-	mutexProfiling = flag.Bool("mutex_profiling", false, "enable mutex profiling")
-)
+var service = flag.String("service", "", "service name")
 
 const duration = time.Minute * 10
 
 // busywork continuously generates 1MiB of random data and compresses it
 // throwing away the result.
-func busywork(mu *sync.Mutex) {
+func busywork() {
 	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
 	for {
@@ -42,9 +38,7 @@ func busywork(mu *sync.Mutex) {
 		case <-ticker.C:
 			return
 		default:
-			mu.Lock()
 			busyworkOnce()
-			mu.Unlock()
 		}
 	}
 }
@@ -74,19 +68,10 @@ func main() {
 
 	if *service == "" {
 		log.Print("Service name must be configured using --service flag.")
-	} else if err := profiler.Start(
-		profiler.Config{
-			Service:        *service,
-			MutexProfiling: *mutexProfiling,
-			DebugLogging:   true,
-		}); err != nil {
+	} else if err := profiler.Start(profiler.Config{Service: *service, DebugLogging: true}); err != nil {
 		log.Printf("Failed to start the profiler: %v", err)
 	} else {
-		mu := new(sync.Mutex)
-		for i := 0; i < 5; i++ {
-			go busywork(mu)
-		}
-		busywork(mu)
+		busywork()
 	}
 
 	log.Printf("busybench finished profiling.")

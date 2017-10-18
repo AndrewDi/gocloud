@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package profiler is a client for the Stackdriver Profiler service.
+// Package profiler is a client for the Google Stackdriver Profiler service.
 //
 // This package is still experimental and subject to change.
 //
@@ -31,7 +31,7 @@
 // The caller must provide the service string in the config, and may provide
 // other information as well. See Config for details.
 //
-// Profiler has CPU, heap and goroutine profiling enabled by default. Mutex
+// Profiler supports CPU, heap and goroutine profiling by default. Mutex
 // profiling can be enabled in the config. Note that goroutine and mutex
 // profiles are shown as "threads" and "contention" profiles in the
 // Stackdriver Profiler UI.
@@ -100,7 +100,7 @@ const (
 type Config struct {
 	// Service (or deprecated Target) must be provided to start the profiler.
 	// It specifies the name of the service under which the profiled data
-	// will be recorded and exposed at the Profiler UI for the project.
+	// will be recorded and exposed at the Stackdriver Profiler UI for the project.
 	// You can specify an arbitrary string, but see Deployment.target at
 	// https://github.com/googleapis/googleapis/blob/master/google/devtools/cloudprofiler/v2/profiler.proto
 	// for restrictions.
@@ -110,7 +110,7 @@ type Config struct {
 	Service string
 
 	// ServiceVersion is an optional field specifying the version of the
-	// service. It can be an arbitrary string. Profiler profiles
+	// service. It can be an arbitrary string. Stackdriver Profiler profiles
 	// once per minute for each version of each service in each zone.
 	// ServiceVersion defaults to an empty string.
 	ServiceVersion string
