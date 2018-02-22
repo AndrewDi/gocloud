@@ -11,7 +11,8 @@ cd git/gocloud
 # Run test only if profiler directory is touched.
 profiler_test=false
 git status
-git diff HEAD^ HEAD --stat
+git diff-tree --no-commit-id --name-only -r HEAD
+git diff
 
 echo $(git diff-tree --no-commit-id --name-only -r HEAD)
 for f in $(git diff-tree --no-commit-id --name-only -r HEAD); do
