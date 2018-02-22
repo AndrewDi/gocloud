@@ -10,7 +10,9 @@ cd git/gocloud
 
 # Run test only if profiler directory is touched.
 profiler_test=false
+echo $(git diff-tree --no-commit-id --name-only -r HEAD)
 for f in $(git diff-tree --no-commit-id --name-only -r HEAD); do
+  echo "$(dirname $f)"
   if [[ "$(dirname $f)" == "profiler" ]]; then
     profiler_test=true
   fi
