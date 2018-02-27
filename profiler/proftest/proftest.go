@@ -133,7 +133,7 @@ func (pr *ProfileResponse) HasFunction(functionName string) error {
 
 // StartInstance starts a GCE Instance with name, zone, and projectId specified
 // by the inst, and which runs the startup script specified in inst.
-func (tr *GCETestRunner) StartInstance(ctx context.Context, inst InstanceConfig) error {
+func (tr *GCETestRunner) StartInstance(ctx context.Context, inst *InstanceConfig) error {
 	img, err := tr.ComputeService.Images.GetFromFamily("debian-cloud", "debian-9").Context(ctx).Do()
 	if err != nil {
 		return err
@@ -177,7 +177,7 @@ func (tr *GCETestRunner) StartInstance(ctx context.Context, inst InstanceConfig)
 
 // DeleteInstance deletes an instance with project id, name, and zone matched
 // by inst.
-func (tr *GCETestRunner) DeleteInstance(ctx context.Context, inst InstanceConfig) error {
+func (tr *GCETestRunner) DeleteInstance(ctx context.Context, inst *InstanceConfig) error {
 	if _, err := tr.ComputeService.Instances.Delete(inst.ProjectID, inst.Zone, inst.Name).Context(ctx).Do(); err != nil {
 		return fmt.Errorf("Instances.Delete(%s) got error: %v", inst.Name, err)
 	}
@@ -187,7 +187,7 @@ func (tr *GCETestRunner) DeleteInstance(ctx context.Context, inst InstanceConfig
 // PollForSerialOutput polls the serial output of the GCE instance specified by
 // inst and returns when the finishString appears in the serial output
 // of the instance, or when the context times out.
-func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst InstanceConfig, finishString string) error {
+func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *InstanceConfig, finishString string) error {
 	var output string
 	defer func() {
 		log.Printf("Serial port output for %s:\n%s", inst.Name, output)
@@ -431,7 +431,7 @@ func (tr *GKETestRunner) PollPodLog(ctx context.Context, kubernetesClient *kuber
 }
 
 // DeleteClusterAndImage deletes cluster and images used to create cluster.
-func (tr *GKETestRunner) DeleteClusterAndImage(ctx context.Context, cfg ClusterConfig) []error {
+func (tr *GKETestRunner) DeleteClusterAndImage(ctx context.Context, cfg *ClusterConfig) []error {
 	var errs []error
 	if err := tr.StorageClient.Bucket(cfg.Bucket).Object(cfg.ImageSourceName).Delete(ctx); err != nil {
 		errs = append(errs, fmt.Errorf("failed to delete storage client: %v", err))
@@ -448,7 +448,7 @@ func (tr *GKETestRunner) DeleteClusterAndImage(ctx context.Context, cfg ClusterC
 
 // StartAndDeployCluster creates image needed for cluster, then starts and
 // deploys to cluster.
-func (tr *GKETestRunner) StartAndDeployCluster(ctx context.Context, cfg ClusterConfig) error {
+func (tr *GKETestRunner) StartAndDeployCluster(ctx context.Context, cfg *ClusterConfig) error {
 	if err := tr.uploadImageSource(ctx, cfg.Bucket, cfg.ImageSourceName, cfg.Dockerfile); err != nil {
 		return fmt.Errorf("failed to upload image source: %v", err)
 	}

@@ -210,26 +210,26 @@ func TestAgentIntegration(t *testing.T) {
 		},
 	}
 
-	for _, testcase := range testcases {
-		tc := testcase // capture range variable
+	for _, tc := range testcases {
+		tc := tc // capture range variable
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			if err := tc.initializeStartupScript(template); err != nil {
 				t.Fatalf("failed to initialize startup script")
 			}
 
-			if err := gceTr.StartInstance(ctx, tc.InstanceConfig); err != nil {
+			if err := gceTr.StartInstance(ctx, &tc.InstanceConfig); err != nil {
 				t.Fatal(err)
 			}
 			defer func() {
-				if gceTr.DeleteInstance(ctx, tc.InstanceConfig); err != nil {
+				if gceTr.DeleteInstance(ctx, &tc.InstanceConfig); err != nil {
 					t.Fatal(err)
 				}
 			}()
 
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute*25)
 			defer cancel()
-			if err := gceTr.PollForSerialOutput(timeoutCtx, tc.InstanceConfig, benchFinishString); err != nil {
+			if err := gceTr.PollForSerialOutput(timeoutCtx, &tc.InstanceConfig, benchFinishString); err != nil {
 				t.Fatal(err)
 			}
 
