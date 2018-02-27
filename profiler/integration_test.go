@@ -55,8 +55,8 @@ set -eo pipefail
 set -x
 
 # Install git
-sudo apt-get update
-sudo apt-get -y -q install git-all
+apt-get update
+apt-get -y -q install git-all
 
 # Install desired Go version
 mkdir -p /tmp/bin
@@ -92,72 +92,14 @@ CMD ["busybench", "--service", "%s"]
  `
 
 type goGCETestCase struct {
-	proftest.GCETestConfig
-	goVersion       string
-	mutexProfiling  bool
-	expProfileTypes []string
+	proftest.InstanceConfig
+	name             string
+	goVersion        string
+	mutexProfiling   bool
+	wantProfileTypes []string
 }
 
-func newGCETestCases(projectID, zone string) []goGCETestCase {
-	return []goGCETestCase{
-		{
-			GCETestConfig: proftest.GCETestConfig{
-				InstanceConfig: proftest.InstanceConfig{
-					ProjectID:   projectID,
-					Zone:        zone,
-					Name:        fmt.Sprintf("profiler-test-go19-%d", runID),
-					MachineType: "n1-standard-1",
-				},
-				Service: fmt.Sprintf("profiler-test-go19-%d-gce", runID),
-			},
-			expProfileTypes: []string{"CPU", "HEAP", "THREADS", "CONTENTION"},
-			goVersion:       "1.9",
-			mutexProfiling:  true,
-		},
-		{
-			GCETestConfig: proftest.GCETestConfig{
-				InstanceConfig: proftest.InstanceConfig{
-					ProjectID:   projectID,
-					Zone:        zone,
-					Name:        fmt.Sprintf("profiler-test-go18-%d", runID),
-					MachineType: "n1-standard-1",
-				},
-				Service: fmt.Sprintf("profiler-test-go18-%d-gce", runID),
-			},
-			expProfileTypes: []string{"CPU", "HEAP", "THREADS", "CONTENTION"},
-			goVersion:       "1.8",
-			mutexProfiling:  true,
-		},
-		{
-			GCETestConfig: proftest.GCETestConfig{
-				InstanceConfig: proftest.InstanceConfig{
-					ProjectID:   projectID,
-					Zone:        zone,
-					Name:        fmt.Sprintf("profiler-test-go17-%d", runID),
-					MachineType: "n1-standard-1",
-				},
-				Service: fmt.Sprintf("profiler-test-go17-%d-gce", runID),
-			},
-			expProfileTypes: []string{"CPU", "HEAP", "THREADS"},
-			goVersion:       "1.7",
-		},
-		{
-			GCETestConfig: proftest.GCETestConfig{
-				InstanceConfig: proftest.InstanceConfig{
-					ProjectID:   projectID,
-					Zone:        zone,
-					Name:        fmt.Sprintf("profiler-test-go16-%d", runID),
-					MachineType: "n1-standard-1",
-				},
-				Service: fmt.Sprintf("profiler-test-go16-%d-gce", runID),
-			},
-			expProfileTypes: []string{"CPU", "HEAP", "THREADS"},
-			goVersion:       "1.6",
-		},
-	}
-}
-
-func (inst *goGCETestCase) initializeStartUpScript(template *template.Template) error {
+func (tc *goGCETestCase) initializeStartupScript(template *template.Template) error {
 	var buf bytes.Buffer
 	err := template.Execute(&buf,
 		struct {
@@ -166,15 +108,15 @@ func (inst *goGCETestCase) initializeStartUpScript(template *template.Template) 
 			Commit         string
 			MutexProfiling bool
 		}{
-			Service:        inst.Service,
-			GoVersion:      inst.goVersion,
+			Service:        tc.name,
+			GoVersion:      tc.goVersion,
 			Commit:         *commit,
-			MutexProfiling: inst.mutexProfiling,
+			MutexProfiling: tc.mutexProfiling,
 		})
 	if err != nil {
-		return fmt.Errorf("failed to render startup script for %s: %v", inst.Name, err)
+		return fmt.Errorf("failed to render startup script for %s: %v", tc.name, err)
 	}
-	inst.StartupScript = buf.String()
+	tc.StartupScript = buf.String()
 	return nil
 }
 
@@ -202,7 +144,7 @@ func TestAgentIntegration(t *testing.T) {
 
 	computeService, err := compute.New(client)
 	if err != nil {
-		t.Fatalf("failed to initialize compute Service: %v", err)
+		t.Fatalf("failed to initialize compute service: %v", err)
 	}
 
 	template, err := template.New("startupScript").Parse(startupTemplate)
@@ -219,37 +161,85 @@ func TestAgentIntegration(t *testing.T) {
 		ComputeService: computeService,
 	}
 
-	testcases := newGCETestCases(projectID, "us-west1-b")
+	testcases := []goGCETestCase{
+		{
+			InstanceConfig: proftest.InstanceConfig{
+				ProjectID:   projectID,
+				Zone:        zone,
+				Name:        fmt.Sprintf("profiler-test-go19-%d", runID),
+				MachineType: "n1-standard-1",
+			},
+			name:             fmt.Sprintf("profiler-test-go19-%d-gce", runID),
+			wantProfileTypes: []string{"CPU", "HEAP", "THREADS", "CONTENTION"},
+			goVersion:        "1.9",
+			mutexProfiling:   true,
+		},
+		{
+			InstanceConfig: proftest.InstanceConfig{
+				ProjectID:   projectID,
+				Zone:        zone,
+				Name:        fmt.Sprintf("profiler-test-go18-%d", runID),
+				MachineType: "n1-standard-1",
+			},
+			name:             fmt.Sprintf("profiler-test-go18-%d-gce", runID),
+			wantProfileTypes: []string{"CPU", "HEAP", "THREADS", "CONTENTION"},
+			goVersion:        "1.8",
+			mutexProfiling:   true,
+		},
+		{
+			InstanceConfig: proftest.InstanceConfig{
+				ProjectID:   projectID,
+				Zone:        zone,
+				Name:        fmt.Sprintf("profiler-test-go17-%d", runID),
+				MachineType: "n1-standard-1",
+			},
+			name:             fmt.Sprintf("profiler-test-go17-%d-gce", runID),
+			wantProfileTypes: []string{"CPU", "HEAP", "THREADS"},
+			goVersion:        "1.7",
+		},
+		{
+			InstanceConfig: proftest.InstanceConfig{
+				ProjectID:   projectID,
+				Zone:        zone,
+				Name:        fmt.Sprintf("profiler-test-go16-%d", runID),
+				MachineType: "n1-standard-1",
+			},
+			name:             fmt.Sprintf("profiler-test-go16-%d-gce", runID),
+			wantProfileTypes: []string{"CPU", "HEAP", "THREADS"},
+			goVersion:        "1.6",
+		},
+	}
+
 	for _, testcase := range testcases {
 		tc := testcase // capture range variable
-		t.Run(tc.Service, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			if err := tc.initializeStartUpScript(template); err != nil {
+			if err := tc.initializeStartupScript(template); err != nil {
 				t.Fatalf("failed to initialize startup script")
 			}
 
-			if err := gceTr.StartInstance(ctx, tc.GCETestConfig.InstanceConfig); err != nil {
+			if err := gceTr.StartInstance(ctx, tc.InstanceConfig); err != nil {
 				t.Fatal(err)
 			}
 			defer func() {
-				if gceTr.DeleteInstance(ctx, tc.GCETestConfig.InstanceConfig); err != nil {
+				if gceTr.DeleteInstance(ctx, tc.InstanceConfig); err != nil {
 					t.Fatal(err)
 				}
 			}()
 
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute*25)
 			defer cancel()
-			if err := gceTr.PollForSerialOutput(timeoutCtx, tc.GCETestConfig.InstanceConfig, benchFinishString); err != nil {
+			if err := gceTr.PollForSerialOutput(timeoutCtx, tc.InstanceConfig, benchFinishString); err != nil {
 				t.Fatal(err)
 			}
 
 			timeNow := time.Now()
 			endTime := timeNow.Format(time.RFC3339)
 			startTime := timeNow.Add(-1 * time.Hour).Format(time.RFC3339)
-			for _, pType := range tc.expProfileTypes {
-				pr, err := tr.QueryProfiles(tc.ProjectID, tc.Service, startTime, endTime, pType)
+			for _, pType := range tc.wantProfileTypes {
+				pr, err := tr.QueryProfiles(tc.ProjectID, tc.name, startTime, endTime, pType)
 				if err != nil {
-					t.Errorf("QueryProfiles(%s, %s, %s, %s, %s) got error: %v", tc.ProjectID, tc.Service, startTime, endTime, pType, err)
+					t.Errorf("QueryProfiles(%s, %s, %s, %s, %s) got error: %v", tc.ProjectID, tc.name, startTime, endTime, pType, err)
 					continue
 				}
 				if err := pr.HasFunction("busywork"); err != nil {

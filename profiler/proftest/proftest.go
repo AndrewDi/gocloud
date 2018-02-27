@@ -96,12 +96,6 @@ type InstanceConfig struct {
 	MachineType   string
 }
 
-// GCETestConfig is configuration for a test case running on GCE instance.
-type GCETestConfig struct {
-	InstanceConfig
-	Service string
-}
-
 // ClusterConfig is configuration for starting single GKE cluster for profiling
 // agent test case.
 type ClusterConfig struct {
@@ -113,12 +107,6 @@ type ClusterConfig struct {
 	ImageName       string
 	Bucket          string
 	Dockerfile      string
-}
-
-// GKETestConfig is configuration for a test case running on GKE cluster.
-type GKETestConfig struct {
-	ClusterConfig
-	Service string
 }
 
 // HasFunction returns nil if the function is present, or, if the function is
@@ -197,9 +185,9 @@ func (tr *GCETestRunner) DeleteInstance(ctx context.Context, inst InstanceConfig
 }
 
 // PollForSerialOutput polls the serial output of the GCE instance specified by
-// inst and returns when the benchFinishString appears in the serial output
+// inst and returns when the finishString appears in the serial output
 // of the instance, or when the context times out.
-func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst InstanceConfig, benchFinishString string) error {
+func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst InstanceConfig, finishString string) error {
 	var output string
 	defer func() {
 		log.Printf("Serial port output for %s:\n%s", inst.Name, output)
@@ -218,7 +206,7 @@ func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst InstanceC
 				continue
 			}
 
-			if output = resp.Contents; strings.Contains(output, benchFinishString) {
+			if output = resp.Contents; strings.Contains(output, finishString) {
 				return nil
 			}
 		}
@@ -415,8 +403,8 @@ func (tr *GKETestRunner) deployContainer(ctx context.Context, kubernetesClient *
 }
 
 // PollPodLog polls the log of the kubernetes client and returns when the
-// benchFinishString appears in the log, or when the context times out.
-func (tr *GKETestRunner) PollPodLog(ctx context.Context, kubernetesClient *kubernetes.Client, podName, benchFinishString string) error {
+// finishString appears in the log, or when the context times out.
+func (tr *GKETestRunner) PollPodLog(ctx context.Context, kubernetesClient *kubernetes.Client, podName, finishString string) error {
 	var output string
 	defer func() {
 		log.Printf("Log for pod %s:\n%s", podName, output)
@@ -435,7 +423,7 @@ func (tr *GKETestRunner) PollPodLog(ctx context.Context, kubernetesClient *kuber
 				log.Printf("Transient error getting log (will retry): %v", err)
 				continue
 			}
-			if strings.Contains(output, benchFinishString) {
+			if strings.Contains(output, finishString) {
 				return nil
 			}
 		}
@@ -443,7 +431,7 @@ func (tr *GKETestRunner) PollPodLog(ctx context.Context, kubernetesClient *kuber
 }
 
 // DeleteClusterAndImage deletes cluster and images used to create cluster.
-func (tr *GKETestRunner) DeleteClusterAndImage(ctx context.Context, cfg GKETestConfig) []error {
+func (tr *GKETestRunner) DeleteClusterAndImage(ctx context.Context, cfg ClusterConfig) []error {
 	var errs []error
 	if err := tr.StorageClient.Bucket(cfg.Bucket).Object(cfg.ImageSourceName).Delete(ctx); err != nil {
 		errs = append(errs, fmt.Errorf("failed to delete storage client: %v", err))
@@ -460,7 +448,7 @@ func (tr *GKETestRunner) DeleteClusterAndImage(ctx context.Context, cfg GKETestC
 
 // StartAndDeployCluster creates image needed for cluster, then starts and
 // deploys to cluster.
-func (tr *GKETestRunner) StartAndDeployCluster(ctx context.Context, cfg GKETestConfig) error {
+func (tr *GKETestRunner) StartAndDeployCluster(ctx context.Context, cfg ClusterConfig) error {
 	if err := tr.uploadImageSource(ctx, cfg.Bucket, cfg.ImageSourceName, cfg.Dockerfile); err != nil {
 		return fmt.Errorf("failed to upload image source: %v", err)
 	}
