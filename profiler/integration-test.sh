@@ -7,7 +7,13 @@ set -eo pipefail
 set -x
 
 cd git/gocloud
+<<<<<<< HEAD
+=======
+git rev-parse HEAD
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 COMMIT=$(git rev-parse HEAD)
+
+go version
 
 # Set $GOPATH
 export GOPATH="$HOME/go"
@@ -29,8 +35,7 @@ set -x
 export GOOGLE_APPLICATION_CREDENTIALS="$(pwd)/key.json"
 export GCLOUD_TESTS_GOLANG_PROJECT_ID="dulcet-port-762"
 export GCLOUD_TESTS_GOLANG_ZONE="us-west1-a"
-export GCLOUD_TESTS_GOLANG_BUCKET="dulcet-port-762-go-cloud-profiler-test"
 
 cd $GOCLOUD_HOME/profiler
 go get -t -tags=integration .
-go test -timeout=60m -parallel=5 -tags=integration -run TestAgentIntegration -commit="$COMMIT"
+go test -timeout=60m -parallel=4 -tags=integration -run TestAgentIntegration -commit="$COMMIT"

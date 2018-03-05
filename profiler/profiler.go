@@ -25,15 +25,24 @@
 //   }
 //
 // Calling Start will start a goroutine to collect profiles and upload to
+<<<<<<< HEAD
 // the profiler server, at the rhythm specified by the server.
+=======
+// Stackdriver Profiler server, at the rhythm specified by the server.
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 //
 // The caller must provide the service string in the config, and may provide
 // other information as well. See Config for details.
 //
 // Profiler has CPU, heap and goroutine profiling enabled by default. Mutex
 // profiling can be enabled in the config. Note that goroutine and mutex
+<<<<<<< HEAD
 // profiles are shown as "threads" and "contention" profiles in the profiler
 // UI.
+=======
+// profiles are shown as "threads" and "contention" profiles in the
+// Stackdriver Profiler UI.
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 package profiler
 
 import (
@@ -123,12 +132,15 @@ type Config struct {
 	// than Go 1.8.
 	MutexProfiling bool
 
+<<<<<<< HEAD
 	// When true, collecting the heap profiles is disabled.
 	NoHeapProfiling bool
 
 	// When true, collecting the goroutine profiles is disabled.
 	NoGoroutineProfiling bool
 
+=======
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 	// ProjectID is the Cloud Console project ID to use instead of
 	// the one read from the VM metadata server.
 	//
@@ -199,8 +211,13 @@ func debugLog(format string, e ...interface{}) {
 	}
 }
 
+<<<<<<< HEAD
 // agent polls the profiler server for instructions on behalf of a task,
 // and collects and uploads profiles as requested.
+=======
+// agent polls Stackdriver Profiler server for instructions on behalf of
+// a task, and collects and uploads profiles as requested.
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 type agent struct {
 	client        pb.ProfilerServiceClient
 	deployment    *pb.Deployment
@@ -209,7 +226,11 @@ type agent struct {
 }
 
 // abortedBackoffDuration retrieves the retry duration from gRPC trailing
+<<<<<<< HEAD
 // metadata, which is set by the profiler server.
+=======
+// metadata, which is set by Stackdriver Profiler server.
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 func abortedBackoffDuration(md grpcmd.MD) (time.Duration, error) {
 	elem := md[retryInfoMetadata]
 	if len(elem) <= 0 {
@@ -246,7 +267,11 @@ func (r *retryer) Retry(err error) (time.Duration, bool) {
 	return r.backoff.Pause(), true
 }
 
+<<<<<<< HEAD
 // createProfile talks to the profiler server to create profile. In
+=======
+// createProfile talks to Stackdriver Profiler server to create profile. In
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 // case of error, the goroutine will sleep and retry. Sleep duration may
 // be specified by the server. Otherwise it will be an exponentially
 // increasing value, bounded by maxBackoff.
@@ -417,6 +442,7 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 		profileLabels[instanceLabel] = config.instance
 	}
 
+<<<<<<< HEAD
 	profileTypes := []pb.ProfileType{pb.ProfileType_CPU}
 	if !config.NoHeapProfiling {
 		profileTypes = append(profileTypes, pb.ProfileType_HEAP)
@@ -424,6 +450,9 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 	if !config.NoGoroutineProfiling {
 		profileTypes = append(profileTypes, pb.ProfileType_THREADS)
 	}
+=======
+	profileTypes := []pb.ProfileType{pb.ProfileType_CPU, pb.ProfileType_HEAP, pb.ProfileType_THREADS}
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 	if mutexEnabled {
 		profileTypes = append(profileTypes, pb.ProfileType_CONTENTION)
 	}
@@ -491,7 +520,11 @@ func initializeConfig(cfg Config) error {
 	return nil
 }
 
+<<<<<<< HEAD
 // pollProfilerService starts an endless loop to poll the profiler
+=======
+// pollProfilerService starts an endless loop to poll Stackdriver Profiler
+>>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 // server for instructions, and collects and uploads profiles as
 // requested.
 func pollProfilerService(ctx context.Context, a *agent) {
