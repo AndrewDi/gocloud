@@ -345,10 +345,7 @@ func TestInitializeAgent(t *testing.T) {
 	for _, tt := range []struct {
 		config               Config
 		enableMutex          bool
-<<<<<<< HEAD
 		wantProfileTypes     []pb.ProfileType
-=======
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 		wantDeploymentLabels map[string]string
 		wantProfileLabels    map[string]string
 	}{
@@ -379,7 +376,6 @@ func TestInitializeAgent(t *testing.T) {
 		{
 			config:               Config{instance: testInstance},
 			enableMutex:          true,
-<<<<<<< HEAD
 			wantProfileTypes:     []pb.ProfileType{pb.ProfileType_CPU, pb.ProfileType_HEAP, pb.ProfileType_THREADS, pb.ProfileType_CONTENTION},
 			wantDeploymentLabels: map[string]string{},
 			wantProfileLabels:    map[string]string{instanceLabel: testInstance},
@@ -396,11 +392,6 @@ func TestInitializeAgent(t *testing.T) {
 			wantDeploymentLabels: map[string]string{},
 			wantProfileLabels:    map[string]string{},
 		},
-=======
-			wantDeploymentLabels: map[string]string{},
-			wantProfileLabels:    map[string]string{instanceLabel: testInstance},
-		},
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 	} {
 
 		config = tt.config
@@ -419,12 +410,9 @@ func TestInitializeAgent(t *testing.T) {
 		}
 		if !testutil.Equal(a.profileLabels, tt.wantProfileLabels) {
 			t.Errorf("initializeAgent() got profile labels: %v, want %v", a.profileLabels, tt.wantProfileLabels)
-<<<<<<< HEAD
 		}
 		if !testutil.Equal(a.profileTypes, tt.wantProfileTypes) {
 			t.Errorf("initializeAgent() got profile types: %v, want %v", a.profileTypes, tt.wantProfileTypes)
-=======
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 		}
 
 		wantProfileTypes := []pb.ProfileType{pb.ProfileType_CPU, pb.ProfileType_HEAP, pb.ProfileType_THREADS}

@@ -16,36 +16,27 @@ package main
 
 import (
 	"bytes"
-	"cloud.google.com/go/profiler"
 	"compress/gzip"
 	"flag"
 	"log"
 	"math/rand"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/profiler"
 )
 
 var (
 	service        = flag.String("service", "", "service name")
 	mutexProfiling = flag.Bool("mutex_profiling", false, "enable mutex profiling")
-<<<<<<< HEAD
 	duration       = flag.Int("duration", 600, "duration of the benchmark in seconds")
 	apiAddr        = flag.String("api_address", "", "API address of the profiler (e.g. 'cloudprofiler.googleapis.com:443')")
 )
-=======
-)
-
-const duration = time.Minute * 10
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 
 // busywork continuously generates 1MiB of random data and compresses it
 // throwing away the result.
 func busywork(mu *sync.Mutex) {
-<<<<<<< HEAD
 	ticker := time.NewTicker(time.Duration(*duration) * time.Second)
-=======
-	ticker := time.NewTicker(duration)
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 	defer ticker.Stop()
 	for {
 		select {
@@ -89,15 +80,11 @@ func main() {
 			Service:        *service,
 			MutexProfiling: *mutexProfiling,
 			DebugLogging:   true,
-<<<<<<< HEAD
 			APIAddr:        *apiAddr,
-=======
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 		}); err != nil {
 		log.Printf("Failed to start the profiler: %v", err)
 	} else {
 		mu := new(sync.Mutex)
-<<<<<<< HEAD
 		var wg sync.WaitGroup
 		wg.Add(5)
 		for i := 0; i < 5; i++ {
@@ -107,12 +94,6 @@ func main() {
 			}()
 		}
 		wg.Wait()
-=======
-		for i := 0; i < 5; i++ {
-			go busywork(mu)
-		}
-		busywork(mu)
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 	}
 
 	log.Printf("busybench finished profiling.")

@@ -7,10 +7,6 @@ set -eo pipefail
 set -x
 
 cd git/gocloud
-<<<<<<< HEAD
-=======
-git rev-parse HEAD
->>>>>>> bffe860d23b144870a3d608fc26bfcdd70c675a2
 COMMIT=$(git rev-parse HEAD)
 
 go version
