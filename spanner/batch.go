@@ -199,10 +199,12 @@ func (t *BatchReadOnlyTransaction) Close() {
 
 // Cleanup cleans up all the resources used by this transaction and makes
 // it unusable. Once this method is invoked, the transaction is no longer
-// usable anywhere including other clients/processes with which this
-// transaction was shared. This is optional but recommended.
-// The resources will be freed when the session is recycled. For more info
-// about recycled sessions:
+// usable anywhere, including other clients/processes with which this
+// transaction was shared.
+//
+// Calling Cleanup is optional, but recommended. If Cleanup is not called, the
+// transaction's resources will be freed when the session expires on the backend and
+// is deleted. For more information about recycled sessions, see
 // https://cloud.google.com/spanner/docs/sessions.
 func (t *BatchReadOnlyTransaction) Cleanup(ctx context.Context) {
 	t.Close()
@@ -277,44 +279,37 @@ func (tid BatchReadOnlyTransactionID) MarshalBinary() (data []byte, err error) {
 
 // UnmarshalBinary implements BinaryUnmarshaler.
 func (tid *BatchReadOnlyTransactionID) UnmarshalBinary(data []byte) error {
-	reader := bytes.NewReader(data)
-	dec := gob.NewDecoder(reader)
+	dec := gob.NewDecoder(bytes.NewReader(data))
 	if err := dec.Decode(&tid.tid); err != nil {
 		return err
 	}
 	if err := dec.Decode(&tid.sid); err != nil {
 		return err
 	}
-	if err := dec.Decode(&tid.rts); err != nil {
-		return err
-	}
-	return nil
+	return dec.Decode(&tid.rts)
 }
 
 // MarshalBinary implements BinaryMarshaler.
 func (p Partition) MarshalBinary() (data []byte, err error) {
-	var (
-		buf             bytes.Buffer
-		isReadPartition bool
-	)
+	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(p.pt); err != nil {
 		return nil, err
 	}
+	var isReadPartition bool
+	var req proto.Message
 	if p.rreq != nil {
 		isReadPartition = true
+		req = p.rreq
+	} else {
+		isReadPartition = false
+		req = p.qreq
 	}
 	if err := enc.Encode(isReadPartition); err != nil {
 		return nil, err
 	}
-	if isReadPartition {
-		if data, err = proto.Marshal(p.rreq); err != nil {
-			return nil, err
-		}
-	} else {
-		if data, err = proto.Marshal(p.qreq); err != nil {
-			return nil, err
-		}
+	if data, err = proto.Marshal(req); err != nil {
+		return nil, err
 	}
 	if err := enc.Encode(data); err != nil {
 		return nil, err
@@ -327,11 +322,9 @@ func (p *Partition) UnmarshalBinary(data []byte) error {
 	var (
 		isReadPartition bool
 		d               []byte
-		qreq            = &sppb.ExecuteSqlRequest{}
-		rreq            = &sppb.ReadRequest{}
+		err             error
 	)
-	reader := bytes.NewReader(data)
-	dec := gob.NewDecoder(reader)
+	dec := gob.NewDecoder(bytes.NewReader(data))
 	if err := dec.Decode(&p.pt); err != nil {
 		return err
 	}
@@ -342,15 +335,11 @@ func (p *Partition) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if isReadPartition {
-		if err := proto.Unmarshal(d, rreq); err != nil {
-			return err
-		}
-		p.rreq = rreq
+		p.rreq = &sppb.ReadRequest{}
+		err = proto.Unmarshal(d, p.rreq)
 	} else {
-		if err := proto.Unmarshal(d, qreq); err != nil {
-			return err
-		}
-		p.qreq = qreq
+		p.qreq = &sppb.ExecuteSqlRequest{}
+		err = proto.Unmarshal(d, p.qreq)
 	}
-	return nil
+	return err
 }
