@@ -208,7 +208,10 @@ func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *Instance
 				log.Printf("Transient error getting serial port output from instance %s (will retry): %v", inst.Name, err)
 				continue
 			}
-
+			if resp.Contents == "" {
+				log.Printf("Serial port output from instance %s is empty string (will retry)", inst.Name)
+				continue
+			}
 			if output = resp.Contents; strings.Contains(output, finishString) {
 				return nil
 			}
