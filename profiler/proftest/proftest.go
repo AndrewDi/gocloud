@@ -202,7 +202,6 @@ func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *Instance
 		select {
 		case <-ctx.Done():
 		case <-time.After(20 * time.Second):
-			log.Printf("Polling for serial output\n")
 			resp, err := tr.ComputeService.Instances.GetSerialPortOutput(inst.ProjectID, inst.Zone, inst.Name).Port(2).Context(ctx).Do()
 			if err != nil {
 				// Transient failure.
