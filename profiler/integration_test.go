@@ -79,7 +79,7 @@ git clone https://code.googlesource.com/gocloud $GOCLOUD_HOME >/dev/null
 cd $GOCLOUD_HOME/profiler/busybench
 git checkout profiler-test
 git reset --hard {{.Commit}}
-go get -v >/dev/null
+go get >/dev/null
 
 # Run benchmark with agent
 go run busybench.go --service="{{.Service}}" --mutex_profiling="{{.MutexProfiling}}"
