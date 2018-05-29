@@ -177,7 +177,28 @@ func (tr *GCETestRunner) StartInstance(ctx context.Context, inst *InstanceConfig
 		}},
 	}).Do()
 
-	return err
+	// Poll status of the operation to create the instance.
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(20 * time.Second):
+			if op.Status == "DONE" {
+				if op.Error != nil {
+					var errMsgs []string
+					for _, e := range op.Error.Errors {
+						if e.Message != "" {
+							errMsgs = append(errMsgs, e.Message)
+						} else {
+							errMsgs = append(errMsgs, e.Code)
+						}
+					}
+					return fmt.Errorf("Failed to create instance: %v", errMsgs)
+				}
+				return nil
+			}
+		}
+	}
 }
 
 // DeleteInstance deletes an instance with project id, name, and zone matched
