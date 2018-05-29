@@ -144,7 +144,7 @@ func (tr *GCETestRunner) StartInstance(ctx context.Context, inst *InstanceConfig
 		return err
 	}
 
-	_, err = tr.ComputeService.Instances.Insert(inst.ProjectID, inst.Zone, &compute.Instance{
+	op, err := tr.ComputeService.Instances.Insert(inst.ProjectID, inst.Zone, &compute.Instance{
 		MachineType: fmt.Sprintf("zones/%s/machineTypes/%s", inst.Zone, inst.MachineType),
 		Name:        inst.Name,
 		Disks: []*compute.AttachedDisk{{
