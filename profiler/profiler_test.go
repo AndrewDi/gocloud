@@ -413,15 +413,6 @@ func TestInitializeAgent(t *testing.T) {
 		if !testutil.Equal(a.profileTypes, tt.wantProfileTypes) {
 			t.Errorf("initializeAgent() got profile types: %v, want %v", a.profileTypes, tt.wantProfileTypes)
 		}
-
-		wantProfileTypes := []pb.ProfileType{pb.ProfileType_CPU, pb.ProfileType_HEAP, pb.ProfileType_THREADS}
-		if tt.enableMutex {
-			wantProfileTypes = append(wantProfileTypes, pb.ProfileType_CONTENTION)
-		}
-		if !testutil.Equal(a.profileTypes, wantProfileTypes) {
-			t.Errorf("initializeAgent() got profile types: %v, want %v", a.profileTypes, wantProfileTypes)
-		}
-
 	}
 }
 
