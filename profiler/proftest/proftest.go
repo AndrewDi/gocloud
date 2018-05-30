@@ -222,6 +222,7 @@ func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *Instance
 	for {
 		select {
 		case <-ctx.Done():
+			return ctx.Err()
 		case <-time.After(20 * time.Second):
 			resp, err := tr.ComputeService.Instances.GetSerialPortOutput(inst.ProjectID, inst.Zone, inst.Name).Port(2).Context(ctx).Do()
 			if err != nil {
@@ -230,7 +231,7 @@ func (tr *GCETestRunner) PollForSerialOutput(ctx context.Context, inst *Instance
 				continue
 			}
 			if resp.Contents == "" {
-				log.Printf("Serial port output from instance %s is empty string (will retry)", inst.Name)
+				log.Printf("Ignoring empty serial port output from instance %s (will retry)", inst.Name)
 				continue
 			}
 			if output = resp.Contents; strings.Contains(output, finishString) {

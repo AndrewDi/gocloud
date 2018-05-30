@@ -14,15 +14,13 @@
 
 // AUTO-GENERATED CODE. DO NOT EDIT.
 
-// Package dlp is an auto-generated package for the
-// DLP API.
+// Package speech is an auto-generated package for the
+// Cloud Speech API.
 //
 //   NOTE: This package is in alpha. It is not stable, and is likely to change.
 //
-// The Google Data Loss Prevention API provides methods for detection of
-// privacy-sensitive fragments in text, images, and Google Cloud Platform
-// storage repositories.
-package dlp // import "cloud.google.com/go/privacy/dlp/apiv2beta2"
+// Converts audio to text by applying powerful neural network models.
+package speech // import "cloud.google.com/go/speech/apiv1p1beta1"
 
 import (
 	"golang.org/x/net/context"

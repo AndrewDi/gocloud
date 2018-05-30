@@ -105,7 +105,7 @@ func (s *pullStream) call(f func(pb.Subscriber_StreamingPullClient) error) error
 		err error
 		bo  gax.Backoff
 	)
-	for i := 0; ; i++ {
+	for {
 		spc, err = s.get(spc)
 		if err != nil {
 			// Preserve the existing behavior of not retrying on open. Is that a bug?
@@ -118,7 +118,9 @@ func (s *pullStream) call(f func(pb.Subscriber_StreamingPullClient) error) error
 			if isRetryable(err) {
 				recordStat(s.ctx, StreamRetryCount, 1)
 				if time.Since(start) < 30*time.Second { // don't sleep if we've been blocked for a while
-					gax.Sleep(s.ctx, bo.Pause())
+					if err := gax.Sleep(s.ctx, bo.Pause()); err != nil {
+						return err
+					}
 				}
 				continue
 			}

@@ -14,15 +14,15 @@
 
 // AUTO-GENERATED CODE. DO NOT EDIT.
 
-// Package dlp is an auto-generated package for the
-// DLP API.
+// Package cloudtasks is an auto-generated package for the
+// Cloud Tasks API.
 //
 //   NOTE: This package is in alpha. It is not stable, and is likely to change.
 //
-// The Google Data Loss Prevention API provides methods for detection of
-// privacy-sensitive fragments in text, images, and Google Cloud Platform
-// storage repositories.
-package dlp // import "cloud.google.com/go/dlp/apiv2beta1"
+// Manages the execution of large numbers of distributed requests. Cloud
+// Tasks
+// is in Alpha.
+package cloudtasks // import "cloud.google.com/go/cloudtasks/apiv2beta2"
 
 import (
 	"golang.org/x/net/context"

@@ -14,18 +14,19 @@
 
 // AUTO-GENERATED CODE. DO NOT EDIT.
 
-package dlp_test
+package cloudtasks_test
 
 import (
-	"cloud.google.com/go/privacy/dlp/apiv2beta2"
+	"cloud.google.com/go/cloudtasks/apiv2beta2"
 	"golang.org/x/net/context"
 	"google.golang.org/api/iterator"
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2beta2"
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2beta2"
+	iampb "google.golang.org/genproto/googleapis/iam/v1"
 )
 
 func ExampleNewClient() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
@@ -33,197 +34,17 @@ func ExampleNewClient() {
 	_ = c
 }
 
-func ExampleClient_InspectContent() {
+func ExampleClient_ListQueues() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.InspectContentRequest{
+	req := &taskspb.ListQueuesRequest{
 		// TODO: Fill request struct fields.
 	}
-	resp, err := c.InspectContent(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_RedactImage() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.RedactImageRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.RedactImage(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_DeidentifyContent() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.DeidentifyContentRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.DeidentifyContent(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_ReidentifyContent() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.ReidentifyContentRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.ReidentifyContent(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_InspectDataSource() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.InspectDataSourceRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.InspectDataSource(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_AnalyzeDataSourceRisk() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.AnalyzeDataSourceRiskRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.AnalyzeDataSourceRisk(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_ListInfoTypes() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.ListInfoTypesRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.ListInfoTypes(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_CreateInspectTemplate() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.CreateInspectTemplateRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.CreateInspectTemplate(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_UpdateInspectTemplate() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.UpdateInspectTemplateRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.UpdateInspectTemplate(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_GetInspectTemplate() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.GetInspectTemplateRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.GetInspectTemplate(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-	// TODO: Use resp.
-	_ = resp
-}
-
-func ExampleClient_ListInspectTemplates() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.ListInspectTemplatesRequest{
-		// TODO: Fill request struct fields.
-	}
-	it := c.ListInspectTemplates(ctx, req)
+	it := c.ListQueues(ctx, req)
 	for {
 		resp, err := it.Next()
 		if err == iterator.Done {
@@ -237,33 +58,17 @@ func ExampleClient_ListInspectTemplates() {
 	}
 }
 
-func ExampleClient_DeleteInspectTemplate() {
+func ExampleClient_GetQueue() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.DeleteInspectTemplateRequest{
+	req := &taskspb.GetQueueRequest{
 		// TODO: Fill request struct fields.
 	}
-	err = c.DeleteInspectTemplate(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-}
-
-func ExampleClient_CreateDeidentifyTemplate() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.CreateDeidentifyTemplateRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.CreateDeidentifyTemplate(ctx, req)
+	resp, err := c.GetQueue(ctx, req)
 	if err != nil {
 		// TODO: Handle error.
 	}
@@ -271,17 +76,17 @@ func ExampleClient_CreateDeidentifyTemplate() {
 	_ = resp
 }
 
-func ExampleClient_UpdateDeidentifyTemplate() {
+func ExampleClient_CreateQueue() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.UpdateDeidentifyTemplateRequest{
+	req := &taskspb.CreateQueueRequest{
 		// TODO: Fill request struct fields.
 	}
-	resp, err := c.UpdateDeidentifyTemplate(ctx, req)
+	resp, err := c.CreateQueue(ctx, req)
 	if err != nil {
 		// TODO: Handle error.
 	}
@@ -289,17 +94,17 @@ func ExampleClient_UpdateDeidentifyTemplate() {
 	_ = resp
 }
 
-func ExampleClient_GetDeidentifyTemplate() {
+func ExampleClient_UpdateQueue() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.GetDeidentifyTemplateRequest{
+	req := &taskspb.UpdateQueueRequest{
 		// TODO: Fill request struct fields.
 	}
-	resp, err := c.GetDeidentifyTemplate(ctx, req)
+	resp, err := c.UpdateQueue(ctx, req)
 	if err != nil {
 		// TODO: Handle error.
 	}
@@ -307,17 +112,141 @@ func ExampleClient_GetDeidentifyTemplate() {
 	_ = resp
 }
 
-func ExampleClient_ListDeidentifyTemplates() {
+func ExampleClient_DeleteQueue() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.ListDeidentifyTemplatesRequest{
+	req := &taskspb.DeleteQueueRequest{
 		// TODO: Fill request struct fields.
 	}
-	it := c.ListDeidentifyTemplates(ctx, req)
+	err = c.DeleteQueue(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+}
+
+func ExampleClient_PurgeQueue() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.PurgeQueueRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.PurgeQueue(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_PauseQueue() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.PauseQueueRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.PauseQueue(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_ResumeQueue() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.ResumeQueueRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.ResumeQueue(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_GetIamPolicy() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &iampb.GetIamPolicyRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.GetIamPolicy(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_SetIamPolicy() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &iampb.SetIamPolicyRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.SetIamPolicy(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_TestIamPermissions() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &iampb.TestIamPermissionsRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.TestIamPermissions(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_ListTasks() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.ListTasksRequest{
+		// TODO: Fill request struct fields.
+	}
+	it := c.ListTasks(ctx, req)
 	for {
 		resp, err := it.Next()
 		if err == iterator.Done {
@@ -331,57 +260,17 @@ func ExampleClient_ListDeidentifyTemplates() {
 	}
 }
 
-func ExampleClient_DeleteDeidentifyTemplate() {
+func ExampleClient_GetTask() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.DeleteDeidentifyTemplateRequest{
+	req := &taskspb.GetTaskRequest{
 		// TODO: Fill request struct fields.
 	}
-	err = c.DeleteDeidentifyTemplate(ctx, req)
-	if err != nil {
-		// TODO: Handle error.
-	}
-}
-
-func ExampleClient_ListDlpJobs() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.ListDlpJobsRequest{
-		// TODO: Fill request struct fields.
-	}
-	it := c.ListDlpJobs(ctx, req)
-	for {
-		resp, err := it.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			// TODO: Handle error.
-		}
-		// TODO: Use resp.
-		_ = resp
-	}
-}
-
-func ExampleClient_GetDlpJob() {
-	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
-	if err != nil {
-		// TODO: Handle error.
-	}
-
-	req := &dlppb.GetDlpJobRequest{
-		// TODO: Fill request struct fields.
-	}
-	resp, err := c.GetDlpJob(ctx, req)
+	resp, err := c.GetTask(ctx, req)
 	if err != nil {
 		// TODO: Handle error.
 	}
@@ -389,34 +278,124 @@ func ExampleClient_GetDlpJob() {
 	_ = resp
 }
 
-func ExampleClient_DeleteDlpJob() {
+func ExampleClient_CreateTask() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.DeleteDlpJobRequest{
+	req := &taskspb.CreateTaskRequest{
 		// TODO: Fill request struct fields.
 	}
-	err = c.DeleteDlpJob(ctx, req)
+	resp, err := c.CreateTask(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_DeleteTask() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.DeleteTaskRequest{
+		// TODO: Fill request struct fields.
+	}
+	err = c.DeleteTask(ctx, req)
 	if err != nil {
 		// TODO: Handle error.
 	}
 }
 
-func ExampleClient_CancelDlpJob() {
+func ExampleClient_LeaseTasks() {
 	ctx := context.Background()
-	c, err := dlp.NewClient(ctx)
+	c, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		// TODO: Handle error.
 	}
 
-	req := &dlppb.CancelDlpJobRequest{
+	req := &taskspb.LeaseTasksRequest{
 		// TODO: Fill request struct fields.
 	}
-	err = c.CancelDlpJob(ctx, req)
+	resp, err := c.LeaseTasks(ctx, req)
 	if err != nil {
 		// TODO: Handle error.
 	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_AcknowledgeTask() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.AcknowledgeTaskRequest{
+		// TODO: Fill request struct fields.
+	}
+	err = c.AcknowledgeTask(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+}
+
+func ExampleClient_RenewLease() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.RenewLeaseRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.RenewLease(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_CancelLease() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.CancelLeaseRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.CancelLease(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
+}
+
+func ExampleClient_RunTask() {
+	ctx := context.Background()
+	c, err := cloudtasks.NewClient(ctx)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	req := &taskspb.RunTaskRequest{
+		// TODO: Fill request struct fields.
+	}
+	resp, err := c.RunTask(ctx, req)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// TODO: Use resp.
+	_ = resp
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// A runner for the cross-language tests.
+// A runner for the conformance tests.
 
 package firestore
 
@@ -38,14 +38,16 @@ import (
 	fspb "google.golang.org/genproto/googleapis/firestore/v1beta1"
 )
 
-func TestCrossLanguageTests(t *testing.T) {
+const conformanceTestWatchTargetID = 1
+
+func TestConformanceTests(t *testing.T) {
 	const dir = "testdata"
 	fis, err := ioutil.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wtid := watchTargetID
-	watchTargetID = 1
+	watchTargetID = conformanceTestWatchTargetID
 	defer func() { watchTargetID = wtid }()
 	n := 0
 	for _, fi := range fis {
@@ -54,7 +56,7 @@ func TestCrossLanguageTests(t *testing.T) {
 			n++
 		}
 	}
-	t.Logf("ran %d cross-language tests", n)
+	t.Logf("ran %d conformance tests", n)
 }
 
 func runTestFromFile(t *testing.T, filename string) {
@@ -191,6 +193,12 @@ func runTest(t *testing.T, msg string, test *pb.Test) {
 			t.Errorf("%s: %v", msg, err)
 		} else if diff := cmp.Diff(got, tt.Listen.Snapshots); diff != "" {
 			t.Errorf("%s:\n%s", msg, diff)
+		}
+		if tt.Listen.IsError {
+			_, err := iter.Next()
+			if err == nil {
+				t.Errorf("%s: got nil, want error", msg)
+			}
 		}
 
 	default:

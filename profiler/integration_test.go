@@ -49,6 +49,13 @@ const startupTemplate = `
 # to stop accounting the VM for billing and cores quota.
 trap "sleep 300 && poweroff" EXIT
 
+retry() {
+  for i in {1..3}; do
+    "${@}" && return 0
+  done
+  return 1
+}
+
 # Fail on any error.
 set -eo pipefail
 
@@ -56,16 +63,16 @@ set -eo pipefail
 set -x
 
 # Install git
-apt-get update  >/dev/null
-apt-get -y -q install git >/dev/null
+retry apt-get update >/dev/null
+retry apt-get -y -q install git >/dev/null
 
 # Install desired Go version
 mkdir -p /tmp/bin
-curl -sL -o /tmp/bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
+retry curl -sL -o /tmp/bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 chmod +x /tmp/bin/gimme
 export PATH=$PATH:/tmp/bin
 
-eval "$(gimme {{.GoVersion}})"
+retry eval "$(gimme {{.GoVersion}})"
 
 # Set $GOPATH
 export GOPATH="$HOME/go"
@@ -74,12 +81,12 @@ export GOCLOUD_HOME=$GOPATH/src/cloud.google.com/go
 mkdir -p $GOCLOUD_HOME
 
 # Install agent
-git clone https://code.googlesource.com/gocloud $GOCLOUD_HOME >/dev/null
+retry git clone https://code.googlesource.com/gocloud $GOCLOUD_HOME >/dev/null
 
 cd $GOCLOUD_HOME/profiler/busybench
 git checkout profiler-test
 git reset --hard {{.Commit}}
-go get >/dev/null
+retry go get >/dev/null
 
 # Run benchmark with agent
 go run busybench.go --service="{{.Service}}" --mutex_profiling="{{.MutexProfiling}}"
@@ -91,7 +98,7 @@ go run busybench.go --service="{{.Service}}" --mutex_profiling="{{.MutexProfilin
 const dockerfileFmt = `FROM golang
 RUN git clone https://code.googlesource.com/gocloud /go/src/cloud.google.com/go \
     && cd /go/src/cloud.google.com/go/profiler/busybench && git checkout profiler-test && git reset --hard %s \
-    && go get -v && go install -v
+    && go get && go install
 CMD ["busybench", "--service", "%s"]
  `
 
@@ -246,7 +253,7 @@ func TestAgentIntegration(t *testing.T) {
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute*25)
 			defer cancel()
 			if err := gceTr.PollForSerialOutput(timeoutCtx, &tc.InstanceConfig, benchFinishString); err != nil {
-				t.Fatal(err)
+				t.Fatalf("PollForSerialOutput() got error: %v", err)
 			}
 
 			timeNow := time.Now()

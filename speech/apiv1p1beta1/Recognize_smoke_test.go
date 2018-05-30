@@ -14,10 +14,10 @@
 
 // AUTO-GENERATED CODE. DO NOT EDIT.
 
-package dlp
+package speech
 
 import (
-	dlppb "google.golang.org/genproto/googleapis/privacy/dlp/v2beta1"
+	speechpb "google.golang.org/genproto/googleapis/cloud/speech/v1p1beta1"
 )
 
 import (
@@ -37,7 +37,7 @@ var _ = iterator.Done
 var _ = strconv.FormatUint
 var _ = time.Now
 
-func TestDlpServiceSmoke(t *testing.T) {
+func TestSpeechSmoke(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping smoke test in short mode")
 	}
@@ -55,25 +55,26 @@ func TestDlpServiceSmoke(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var minLikelihood dlppb.Likelihood = dlppb.Likelihood_POSSIBLE
-	var inspectConfig = &dlppb.InspectConfig{
-		MinLikelihood: minLikelihood,
+	var languageCode string = "en-US"
+	var sampleRateHertz int32 = 44100
+	var encoding speechpb.RecognitionConfig_AudioEncoding = speechpb.RecognitionConfig_FLAC
+	var config = &speechpb.RecognitionConfig{
+		LanguageCode:    languageCode,
+		SampleRateHertz: sampleRateHertz,
+		Encoding:        encoding,
 	}
-	var type_ string = "text/plain"
-	var value string = "my phone number is 215-512-1212"
-	var itemsElement = &dlppb.ContentItem{
-		Type: type_,
-		DataItem: &dlppb.ContentItem_Value{
-			Value: value,
+	var uri string = "gs://gapic-toolkit/hello.flac"
+	var audio = &speechpb.RecognitionAudio{
+		AudioSource: &speechpb.RecognitionAudio_Uri{
+			Uri: uri,
 		},
 	}
-	var items = []*dlppb.ContentItem{itemsElement}
-	var request = &dlppb.InspectContentRequest{
-		InspectConfig: inspectConfig,
-		Items:         items,
+	var request = &speechpb.RecognizeRequest{
+		Config: config,
+		Audio:  audio,
 	}
 
-	if _, err := c.InspectContent(ctx, request); err != nil {
+	if _, err := c.Recognize(ctx, request); err != nil {
 		t.Error(err)
 	}
 }

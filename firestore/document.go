@@ -40,7 +40,7 @@ type DocumentSnapshot struct {
 	CreateTime time.Time
 
 	// Read-only. The time at which the document was last changed. This value
-	// is initally set to CreateTime then increases monotonically with each
+	// is initially set to CreateTime then increases monotonically with each
 	// change to the document. It can also be compared to values from other
 	// documents and the read time of a query.
 	UpdateTime time.Time
@@ -110,7 +110,7 @@ func (d *DocumentSnapshot) DataTo(p interface{}) error {
 	if !d.Exists() {
 		return status.Errorf(codes.NotFound, "document %s does not exist", d.Ref.Path)
 	}
-	return setFromProtoValue(p, &pb.Value{&pb.Value_MapValue{&pb.MapValue{d.proto.Fields}}}, d.c)
+	return setFromProtoValue(p, &pb.Value{ValueType: &pb.Value_MapValue{&pb.MapValue{Fields: d.proto.Fields}}}, d.c)
 }
 
 // DataAt returns the data value denoted by path.
@@ -190,7 +190,7 @@ func toProtoDocument(x interface{}) (*pb.Document, []FieldPath, error) {
 	if pv != nil {
 		m := pv.GetMapValue()
 		if m == nil {
-			return nil, nil, fmt.Errorf("firestore: cannot covert value of type %T into a map", x)
+			return nil, nil, fmt.Errorf("firestore: cannot convert value of type %T into a map", x)
 		}
 		fields = m.Fields
 	}
